@@ -79,7 +79,7 @@ func Clear() {
 	escape('J', 2)
 }
 
-func (g Grid) Render(x, y int, r rune, c, bg Color) {
+func (g Grid) Render(x, y int, s string, c, bg Color) {
 	fmt.Printf(string(COLORS[c]))
 	fmt.Printf(string(BACKGROUND_COLORS[bg]))
 	var xx, yy int
@@ -87,9 +87,9 @@ func (g Grid) Render(x, y int, r rune, c, bg Color) {
 		for xx = 0; xx < g.Cell.Width; xx++ {
 			jump(1+xx+x*g.Cell.Width, 1+yy+y*g.Cell.Height)
 			if yy == g.Cell.Height/2 && xx == g.Cell.Width/2 {
-				fmt.Printf("%c", r)
+				fmt.Print(s)
 			} else {
-				fmt.Printf(" ")
+				fmt.Print(" ")
 			}
 		}
 	}

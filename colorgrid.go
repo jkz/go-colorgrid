@@ -1,96 +1,78 @@
 package colorgrid
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/nsf/termbox-go"
+)
 
-type Color int
-type ColorCode string
+type Color termbox.Attribute
 
 type Size struct {
 	Width, Height int
 }
 
 type Grid struct {
-	Cell Size
+	Size   Size
+	Fg, Bg Color
+}
+
+func (g Grid) fg() termbox.Attribute {
+	return termbox.Attribute(g.Fg)
+}
+
+func (g Grid) bg() termbox.Attribute {
+	return termbox.Attribute(g.Bg)
 }
 
 const (
-	WHITE Color = iota
+	DEFAULT Color = iota
 	BLACK
 	RED
 	GREEN
-	LIGHT_BLUE
-	MAGENTA
 	YELLOW
+	BLUE
+	MAGENTA
+	CYAN
+	WHITE
 )
 
-var COLORS = map[Color]ColorCode{
-	WHITE:      "\033[01;37m",
-	BLACK:      "\033[22;30m",
-	RED:        "\033[22;31m",
-	GREEN:      "\033[22;32m",
-	LIGHT_BLUE: "\033[01;34m",
-	MAGENTA:    "\033[22;35m",
-	YELLOW:     "\033[01;33m",
+func (g Grid) Print(x, y int, s string, fg, bg Color) {
+	termbox.SetCell(x, y, ' ', g.fg(), g.bg())
+	termbox.SetCursor(x, y)
+	fmt.Print(s)
 }
 
-var BACKGROUND_COLORS = map[Color]ColorCode{
-	WHITE:      "\033[01;47m",
-	BLACK:      "\033[22;40m",
-	RED:        "\033[22;41m",
-	GREEN:      "\033[22;42m",
-	LIGHT_BLUE: "\033[01;44m",
-	MAGENTA:    "\033[22;45m",
-	YELLOW:     "\033[01;43m",
-}
-
-func escape(c rune, val ...int) {
-	fmt.Print("\033[", val[0])
-	for _, d := range val[1:] {
-		fmt.Printf(";", d)
-	}
-	fmt.Printf("%c", c)
-	fmt.Println()
-}
-
-func jump(x, y int) {
-	fmt.Printf("\033[%d;%dH", y, x)
-}
-
-func move(x, y int) {
-	switch {
-	case y < 0:
-		fmt.Println("UP")
-		fmt.Println("033[%dA", -y)
-	case y > 0:
-		fmt.Println("DOWN")
-		fmt.Println("033[%dB", y)
-	}
-	switch {
-	case x < 0:
-		fmt.Println("RIGHT")
-		fmt.Println("033[%dC", -x)
-	case x > 0:
-		fmt.Println("LEFT")
-		fmt.Println("033[%dD", x)
-	}
-}
-
-func Clear() {
-	escape('J', 2)
-}
-
-func (g Grid) Render(x, y int, s string, c, bg Color) {
-	fmt.Printf(string(COLORS[c]))
-	fmt.Printf(string(BACKGROUND_COLORS[bg]))
-	var xx, yy int
-	for yy = 0; yy < g.Cell.Height; yy++ {
-		for xx = 0; xx < g.Cell.Width; xx++ {
-			jump(1+xx+x*g.Cell.Width, 1+yy+y*g.Cell.Height)
-			if yy == g.Cell.Height/2 && xx == g.Cell.Width/2 {
-				fmt.Print(s)
+func (g Grid) Cell(x, y int, ch rune, fg, bg Color) {
+	var xx, yy, x_, y_ int
+	var ch_ rune
+	var fg_, bg_ termbox.Attribute
+	for yy = 0; yy < g.Size.Height; yy++ {
+		for xx = 0; xx < g.Size.Width; xx++ {
+			if yy == g.Size.Height/2 && xx == g.Size.Width/2 {
+				ch_ = ch
 			} else {
-				fmt.Print(" ")
+				ch_ = ' '
 			}
+			x_ = 1 + xx + x*g.Size.Width
+			y_ = 1 + yy + y*g.Size.Height
+			fg_ = termbox.Attribute(fg)
+			bg_ = termbox.Attribute(bg)
+			//fmt.Printf("(%d, %d), %c, %d, %d\r\n", x_, y_, ch_, fg_, bg_)
+			termbox.SetCell(x_, y_, ch_, fg_, bg_)
 		}
 	}
+	termbox.SetCell(-1, -1, 'x', g.fg(), g.bg())
+	termbox.Flush()
+}
+
+func (g Grid) Clear() {
+	termbox.Clear(g.fg(), g.bg())
+}
+
+func (g Grid) Flush() {
+	termbox.Flush()
+}
+
+func NewGrid(width, height int, fg, bg Color) Grid {
+	return Grid{Size{width, height}, fg, bg}
 }
